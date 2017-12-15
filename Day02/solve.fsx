@@ -11,10 +11,11 @@ let numbers =
     |> Array.toList
     |> List.map parseLineToInts
 
+
+// Part 1
+
 let maxMinDiff (a: int list) =
-    let max = a |> List.max
-    let min = a |> List.min
-    max - min
+    (List.max a) - (List.min a)
 
 numbers 
 |> List.sumBy maxMinDiff
@@ -25,17 +26,16 @@ let rec findNumbersDivisibleWith e l = // assume sorted list, with largest first
     | [] -> None
     | h::t -> 
         match e % h with
-        | 0 -> Some (e, h)
+        | 0 -> Some (e / h)
         | _ -> findNumbersDivisibleWith e t
 
 let rec findDivisibleNumbers l =
     match l with
-    | [] -> None
+    | [] -> 0
     | h::t ->
         match findNumbersDivisibleWith h t with
-        | Some (a, b) -> Some (a / b)
+        | Some i -> i
         | None -> findDivisibleNumbers t 
 
-numbers
-|> List.map (List.sortDescending >> findDivisibleNumbers)
-|> List.sumBy Option.get
+numbers 
+|> List.sumBy (List.sortDescending >> findDivisibleNumbers)
