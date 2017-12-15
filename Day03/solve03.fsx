@@ -59,3 +59,53 @@ let distance state =
 seq {2 .. input} 
 |> Seq.fold move start 
 |> distance
+
+
+// Part 2
+
+type Sum = {
+    state: State
+    sum: int
+}
+
+let sumStart = {
+    state = start
+    sum = 1
+}
+
+let matchPosition (p:Position) (s:Sum) =
+    if s.state.position = p then 
+        Some s.sum
+    else
+        None 
+
+let findSumAtPosition (l:Sum list) (pos:Position) =
+    l |> List.choose (matchPosition pos) |> List.sum
+
+let calculateSum (l:Sum list) (pos:Position) =
+    findSumAtPosition l {x = pos.x + 1; y = pos.y}
+    + findSumAtPosition l {x = pos.x + 1; y = pos.y + 1}
+    + findSumAtPosition l {x = pos.x; y = pos.y + 1}
+    + findSumAtPosition l {x = pos.x - 1; y = pos.y + 1}
+    + findSumAtPosition l {x = pos.x - 1; y = pos.y}
+    + findSumAtPosition l {x = pos.x - 1; y = pos.y - 1}
+    + findSumAtPosition l {x = pos.x; y = pos.y - 1}
+    + findSumAtPosition l {x = pos.x + 1; y = pos.y - 1}
+
+let findNextSum (lst:Sum list) =
+    let current = List.head lst
+    let nextState = move current.state 0
+    let sumHere = calculateSum lst nextState.position
+    {
+        state = nextState
+        sum = sumHere
+    } :: lst
+
+let rec solve (lst:Sum list) =
+    let newLst = lst |> findNextSum
+    match newLst with
+    | [] -> 0
+    | h::_ when h.sum > input -> h.sum
+    | _ -> solve newLst
+
+solve [sumStart]
