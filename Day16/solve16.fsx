@@ -63,6 +63,7 @@ Path.Combine(__SOURCE_DIRECTORY__, "input.txt")
 |> List.map parseMoves
 |> List.fold move start
 |> System.String
+|> printfn "Solution to part 1: %s"
 
 // Part 2
 let oneDance (a:char array) =
@@ -88,13 +89,13 @@ let oneDance (a:char array) =
         a.[13]
     |]
 
-let rec iterate i f a =
+let rec iterate f i a =
     match i with
     | 0 -> a
-    | _ -> a |> f |> iterate (i - 1) f
+    | _ -> a |> f |> iterate f (i - 1) 
 
 start
-|> iterate (1000 * 1000 * 1000) oneDance
+|> iterate oneDance (1000 * 1000 * 1000) 
 |> System.String
 
 // ERROR!!! Gives wrong solution :-(
