@@ -1,5 +1,4 @@
 open System.IO
-open System
 
 type SingleDisk = {
     name: string
