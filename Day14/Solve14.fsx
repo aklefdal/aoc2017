@@ -79,8 +79,7 @@ let hash (s:string) =
     // |> List.map createHex
     // |> List.reduce (+)
 
-let input = "xlqgujun"
-
+// Part 1
 let rec countBinaryOnes (sum:int) (i:int) =
     match i with
     | 0 -> sum
@@ -93,6 +92,88 @@ let rec countBinaryOnes (sum:int) (i:int) =
 let countUsedCellsForRow (l:int list) =
     l |> List.sumBy (countBinaryOnes 0)
 
+let input = "xlqgujun"
+
 seq {0..127} 
 |> Seq.map (fun rowNumber -> sprintf "%s-%i" input rowNumber |> hash)
 |> Seq.sumBy countUsedCellsForRow
+
+// Part 2
+let rec addBinaryDigit (l:bool list) (i:int) =
+    match i with
+    | 0 -> false::l
+    | 1 -> true::l
+    | _ -> 
+        match i % 2 with
+        | 0 -> addBinaryDigit (false::l) (i / 2) 
+        | 1 -> addBinaryDigit (true::l) (i / 2) 
+
+let rec toLongList (l:bool list) =
+    match l.Length with
+    | 8 -> l
+    | _ -> false::l |> toLongList
+
+let createBinaryListForRow =
+    List.map (addBinaryDigit [])
+    >> List.map toLongList
+    >> List.reduce (@)
+
+type State =
+| Unprocessed
+| Processed of int
+| NotSet
+
+let toState b =
+    match b with
+    | true -> Unprocessed
+    | false -> NotSet
+
+let stateToNumber state =
+    match state with
+    | Unprocessed -> 0
+    | Processed i -> i
+    | NotSet -> 0
+
+
+let getRow rowNumber =
+    sprintf "%s-%i" input rowNumber |> hash
+    |> createBinaryListForRow
+    |> List.map toState
+    |> List.toArray
+
+let disk = 
+    seq {0..127} 
+    |> Seq.map getRow
+    |> Seq.toArray
+
+let rec processCell (currentRow:int) (currentCell:int) (currentGroup:int) =
+    match currentRow with
+    | r when r >= 128 -> currentGroup
+    | r when r < 0 -> currentGroup
+    | _ ->
+        match currentCell with
+        | c when c >= 128 -> currentGroup
+        | c when c < 0 -> currentGroup
+        | _ ->
+            match disk.[currentRow].[currentCell] with
+            | NotSet
+            | Processed _ -> currentGroup
+            | Unprocessed -> 
+                disk.[currentRow].[currentCell] <- (Processed currentGroup)
+                processCell currentRow (currentCell + 1) currentGroup |> ignore
+                processCell (currentRow + 1) currentCell currentGroup |> ignore
+                processCell currentRow (currentCell - 1) currentGroup |> ignore
+                processCell (currentRow - 1) currentCell currentGroup |> ignore
+                currentGroup + 1
+
+let rec checkDisk (currentRow:int) (currentCell:int) (currentGroup:int) =
+    match currentRow with
+    | r when r >= 128 -> currentGroup - 1
+    | _ ->
+        match currentCell with
+        | c when c >= 128 -> checkDisk (currentRow + 1) 0 currentGroup
+        | _ ->  
+            processCell currentRow currentCell currentGroup
+            |> checkDisk currentRow (currentCell + 1)
+
+checkDisk 0 0 1
