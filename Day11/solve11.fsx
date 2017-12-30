@@ -1,6 +1,5 @@
 open System.IO
-
-let splitOnComma (s:string) = s.Split([|','|]) 
+open System
 
 type Movement = {
     direction: string
@@ -8,112 +7,101 @@ type Movement = {
 }
 
 type TotalMovement = {
-    N: int
     NE: int
-    SE: int
-    S: int
-    SW: int
+    N: int
     NW: int
 }
 
-let findSteps (direction:string) (movements:Movement list) =
-    movements 
-    |> List.find (fun movement -> movement.direction = direction) 
-    |> (fun movement -> movement.steps)
+type State = {
+    tm: TotalMovement
+    distance: int
+    maxDistance: int
+}
 
-let findTotalMovement (movements:Movement list) =
-    {
-        N = movements |> findSteps "n"
-        NE = movements |> findSteps "ne"
-        SE = movements |> findSteps "se"
-        SW = movements |> findSteps "s"
-        S = movements |> findSteps "sw"
-        NW = movements |> findSteps "nw"
-    }
+let splitOnComma (s:string) = s.Split([|','|]) 
 
-let simplify_N_S_Movements (tm:TotalMovement) =
-    if tm.N > tm.S then
-        {tm with N = tm.N - tm.S; S = 0}
-    else
-        {tm with N = 0; S = tm.S - tm.N}
-
-let simplify_NW_SE_Movements (tm:TotalMovement) =
-    if tm.NW > tm.SE then
-        {tm with NW = tm.NW - tm.SE; SE = 0}
-    else
-        {tm with NW = 0; SE = tm.SE - tm.NW}
-
-let simplify_NE_SW_Movements (tm:TotalMovement) =
-    if tm.NE > tm.SW then
-        {tm with NE = tm.NE - tm.SW; SW = 0}
-    else
-        {tm with NE = 0; SW = tm.SW - tm.NE}
-
-let simplify_NE_NW_N_Movements (tm:TotalMovement) =
-    if tm.NE > 0 && tm.NW > 0 then
-        let steps = System.Math.Min(tm.NE, tm.NW)
-        {tm with NE = tm.NE - steps; NW = tm.NW - steps; N = tm.N + steps}
-    else
-        tm
-let simplify_SE_SW_S_Movements (tm:TotalMovement) =
-    if tm.SE > 0 && tm.SW > 0 then
-        let steps = System.Math.Min(tm.SE, tm.SW)
-        {tm with SE = tm.SE - steps; SW = tm.SW - steps; S = tm.S + steps}
+let simplify_NW_NE_N_Movements (tm:TotalMovement) =
+    if tm.NW > 0 && tm.NE > 0 then
+        {tm with NE = tm.NE - 1; NW = tm.NW - 1; N = tm.N + 1}
     else
         tm
 
+{ NE = 1; N = 0; NW = 1 } |> simplify_NW_NE_N_Movements
+
+let simplify_N_SE_NE_Movements (tm:TotalMovement) =
+    if tm.NW < 0 && tm.N > 0 then
+        { tm with NW = tm.NW + 1; N = tm.N - 1; NE = tm.NE + 1 }
+    else
+        tm
+
+{ NE = 0; N = 1; NW = -1 } |> simplify_N_SE_NE_Movements
 let simplify_NE_S_SE_Movements (tm:TotalMovement) =
-    if tm.NE > 0 && tm.S > 0 then
-        let steps = System.Math.Min(tm.NE, tm.S)
-        {tm with NE= tm.NE - steps; S = tm.S - steps; SE = tm.SE + steps}
+    if tm.NE > 0 && tm.N < 0 then
+        { tm with NE = tm.NE - 1; N = tm.N + 1; NW = tm.NW - 1 }
     else
         tm
+
+{ NE = 1; N = -1; NW = 0 } |> simplify_NE_S_SE_Movements
+
+let simplify_SE_SW_S_Movements (tm:TotalMovement) =
+    if tm.NW < 0 && tm.NE < 0 then
+        { tm with NE = tm.NE + 1; NW = tm.NW + 1; N = tm.N - 1 }
+    else
+        tm
+
+{ NE = -1; N = 0; NW = -1 } |> simplify_SE_SW_S_Movements
 
 let simplify_NW_S_SW_Movements (tm:TotalMovement) =
-    if tm.NW > 0 && tm.S > 0 then
-        let steps = System.Math.Min(tm.NW, tm.S)
-        {tm with NW= tm.NW - steps; S = tm.S - steps; SE = tm.SE + steps}
+    if tm.NW > 0 && tm.N < 0 then
+        { tm with NW = tm.NW - 1; N = tm.N + 1; NE = tm.NE - 1 }
     else
         tm
 
-let simplify_NW_SW_N_Movements (tm:TotalMovement) =
-    if tm.SW > 0 && tm.N > 0 then
-        let steps = System.Math.Min(tm.SW, tm.N)
-        {tm with SW= tm.SW - steps; N = tm.N - steps; NW = tm.NW + steps}
+{ NE = 0; N = -1; NW = 1 } |> simplify_NW_S_SW_Movements
+
+let simplify_N_SW_NW_Movements (tm:TotalMovement) =
+    if tm.NE < 0 && tm.N > 0 then
+        { tm with NE = tm.NE + 1; N = tm.N - 1; NW = tm.NW + 1 }
     else
         tm
 
-let simplify_NE_SE_N_Movements (tm:TotalMovement) =
-    if tm.SE > 0 && tm.N > 0 then
-        let steps = System.Math.Min(tm.SE, tm.N)
-        {tm with SE = tm.SE - steps; N = tm.N - steps; NE = tm.NE + steps}
-    else
-        tm
+{ NE = -1; N = 1; NW = 0 } |> simplify_N_SW_NW_Movements
 
-let simplify = 
-    simplify_N_S_Movements
-    >> simplify_NE_SW_Movements
-    >> simplify_NW_SE_Movements
-    >> simplify_NE_NW_N_Movements
-    >> simplify_SE_SW_S_Movements
+let simplify =
+    simplify_N_SE_NE_Movements
     >> simplify_NE_S_SE_Movements
+    >> simplify_SE_SW_S_Movements
     >> simplify_NW_S_SW_Movements
-    >> simplify_NW_SW_N_Movements
-    >> simplify_NE_SE_N_Movements
+    >> simplify_N_SW_NW_Movements
+    >> simplify_NW_NE_N_Movements
 
-let summarize (tm:TotalMovement) = tm.N + tm.NE + tm.SE + tm.S + tm.SW + tm.NW 
+let abs (i:int) = Math.Abs i
 
-let readInput =
-    Path.Combine(__SOURCE_DIRECTORY__, "input11.txt")
-    |> File.ReadAllText
-    |> splitOnComma
-    |> Array.toList
+let summarize (tm:TotalMovement) = (abs tm.N) + (abs tm.NE) + (abs tm.NW) 
 
-readInput
-|> List.countBy id
-|> List.map (fun (direction, steps) -> {direction = direction;steps = steps })
-|> findTotalMovement
-|> simplify
-|> summarize
+let move (tm:TotalMovement) (movement:string) =
+    match movement with 
+    | "n" -> {tm with N = tm.N + 1}
+    | "ne" -> {tm with NE = tm.NE + 1}
+    | "se" -> {tm with NW = tm.NW - 1}
+    | "s" -> {tm with N = tm.N - 1}
+    | "sw" -> {tm with NE = tm.NE - 1}
+    | "nw" -> {tm with NW = tm.NW + 1}
+    | _ -> failwithf "WTF? Error in input: %s" movement
 
-// Part 2
+let folder (state:State) (movement:string) =
+    let newTm = move state.tm movement |> simplify
+    let distance = newTm |> summarize
+    let maxDistance = if distance > state.maxDistance then distance else state.maxDistance
+    { tm = newTm; distance = distance; maxDistance = maxDistance }
+
+let startState = {
+    tm = { NW = 0; N = 0; NE = 0 }
+    distance = 0
+    maxDistance = 0
+}
+
+Path.Combine(__SOURCE_DIRECTORY__, "input11.txt")
+|> File.ReadAllText
+|> splitOnComma
+|> Array.fold folder startState
