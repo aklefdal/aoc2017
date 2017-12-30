@@ -23,3 +23,10 @@ let rec add (l:int list) (n:int) =
         input.[n].pipes |> List.fold add (n::l)
 
 add [] 0 |> List.sort |> List.length
+
+// Part 2
+input
+|> Array.mapi (fun i _ -> add [] i)
+|> Array.map List.sort
+|> Array.distinct
+|> Array.length
