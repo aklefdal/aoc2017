@@ -14,13 +14,13 @@ let modFactor (range:int) =
     | 1 -> 1
     | _ -> (range - 1) * 2
 
-let isCaught (i:Input) =
-    match i.layer % (i.range |> modFactor) with
+let isCaught (time:int) (range:int) =
+    match time % (range |> modFactor) with
     | 0 -> true
     | _ -> false
 
-let calculateFactor (i:Input) =
-    match i |> isCaught with
+let calculateFactor (delay:int) (i:Input) =
+    match isCaught (i.layer + delay) i.range with
     | false -> 0
     | true -> i.layer * i.range
 
@@ -30,4 +30,17 @@ let input =
     |> File.ReadAllLines
     |> Array.map lineToInput
 
-input |> Array.map calculateFactor |> Array.sum
+let calculateSeverity delay =
+    Array.sumBy (calculateFactor delay)
+
+
+// Part 1
+input |> calculateSeverity 0
+
+// Part 2
+let isCaughtAtAll delay input =
+    input
+    |> Array.map (fun i -> isCaught (i.layer + delay) i.range)
+    |> Array.contains true 
+
+seq {0..10000000} |> Seq.find (fun delay -> input |> isCaughtAtAll delay |> (=) false)
