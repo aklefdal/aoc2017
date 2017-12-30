@@ -1,8 +1,6 @@
 let input = 376
 // let input = 3
 
-let start = [0]
-
 let rec findNextPos (l:int list) (currentPos:int) (count:int) =
     let pos = 
         match l.Length = currentPos with
@@ -10,7 +8,7 @@ let rec findNextPos (l:int list) (currentPos:int) (count:int) =
         | false -> currentPos
 
     match count with
-    | 0 -> pos
+    | 0 -> pos + 1
     | _ -> findNextPos l (pos + 1) (count - 1)
 
 let insertAtPos (l:int list) (pos:int) (value:int) =
@@ -20,10 +18,10 @@ let insertAtPos (l:int list) (pos:int) (value:int) =
 
 let rec buildRing l pos value =
     let nextPos = findNextPos l pos input
-    let newRing = insertAtPos l (nextPos + 1) value
+    let newRing = insertAtPos l nextPos value
     match value with
     | 2017 -> newRing 
-    | _ -> buildRing newRing (nextPos + 1) (value + 1)
+    | _ -> buildRing newRing nextPos (value + 1)
 
 let ring = buildRing [0] 0 1
 let pos2017 = ring |> List.findIndex (fun e -> e = 2017)
