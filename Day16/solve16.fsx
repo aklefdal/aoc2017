@@ -57,45 +57,31 @@ let splitLineIntoTokens (line:string) =
     |> Array.toList
 
 let start = seq {'a' .. 'p'} |> Seq.toArray
-Path.Combine(__SOURCE_DIRECTORY__, "input.txt")
-|> File.ReadAllText
-|> splitLineIntoTokens
-|> List.map parseMoves
-|> List.fold move start
+
+let moves =
+    Path.Combine(__SOURCE_DIRECTORY__, "input.txt")
+    |> File.ReadAllText
+    |> splitLineIntoTokens
+    |> List.map parseMoves
+
+let doWork (positions:char array) _ =
+    moves |> List.fold move positions
+
+doWork start 0
 |> System.String
 |> printfn "Solution to part 1: %s"
 
+
 // Part 2
-let oneDance (a:char array) =
-    // a b c d e f g h i j k  l  m  n  o  p
-    // 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
-    // f g m o b e a i j h d  p  k  c  l  n
-    [| 
-        a.[5]
-        a.[6]
-        a.[12]
-        a.[14]
-        a.[1]
-        a.[4]
-        a.[0]
-        a.[8]
-        a.[9]
-        a.[7]
-        a.[3]
-        a.[15]
-        a.[10]
-        a.[2]
-        a.[11]
-        a.[13]
-    |]
+let rec findModus (positions:char array) (count:int) =
+    let newPositions = doWork positions 0 
+    match newPositions = start with
+    | true -> count
+    | false -> findModus newPositions (count + 1)
 
-let rec iterate f i a =
-    match i with
-    | 0 -> a
-    | _ -> a |> f |> iterate f (i - 1) 
-
-start
-|> iterate oneDance (1000 * 1000 * 1000) 
+let modus = findModus start 1
+let count = 1000*1000*1000 % modus
+seq {1..count} 
+|> Seq.fold doWork start 
 |> System.String
-
-// ERROR!!! Gives wrong solution :-(
+|> printfn "Solution to part 2: %s"
