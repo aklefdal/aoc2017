@@ -26,3 +26,13 @@ let rec buildRing l pos value =
 let ring = buildRing [0] 0 1
 let pos2017 = ring |> List.findIndex (fun e -> e = 2017)
 ring.[pos2017 + 1]
+
+// Part 2
+let rec findPos l max pos value =
+    match max = value with
+    | true -> l
+    | false -> 
+        let newPos = (pos + input) % value + 1
+        findPos ((value,newPos)::l) max newPos (value + 1)
+
+findPos [] 50000000 1 1 |> List.find (fun (_,pos) -> pos = 1) |> fst
